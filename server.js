@@ -175,6 +175,36 @@ app.post("/verify-payment", authenticateToken, (req, res) => {
   }
 });
 
+// Telegram Notification Endpoint
+app.post("/api/notifications/telegram", authenticateToken, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!botToken || !chatId) {
+      return res.status(500).json({ error: "Telegram service not configured" });
+    }
+
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "HTML",
+      }),
+    });
+
+    res.status(200).json({ success: true, message: "Notification sent" });
+  } catch (error) {
+    console.error("Telegram API Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to send notification via Telegram" });
+  }
+});
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
